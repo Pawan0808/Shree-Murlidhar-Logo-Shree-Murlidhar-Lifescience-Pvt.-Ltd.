@@ -1,11 +1,20 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
-import { visualizer } from 'rollup-plugin-visualizer';
 import path from "path";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const isProduction = mode === 'production';
+  
+  // Only import visualizer in development or when explicitly needed
+  let visualizer: any = null;
+  if (process.env.ENABLE_VISUALIZER === 'true') {
+    try {
+      visualizer = require('rollup-plugin-visualizer');
+    } catch (e) {
+      console.warn('rollup-plugin-visualizer not found, skipping...');
+    }
+  }
   
   return {
     server: {
@@ -14,12 +23,12 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       react(),
-      isProduction && visualizer({
+      isProduction && visualizer && visualizer({
         open: true,
         gzipSize: true,
         brotliSize: true,
-      }) as any,
-    ],
+      }),
+    ].filter(Boolean),
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
